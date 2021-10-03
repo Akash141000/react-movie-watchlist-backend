@@ -1,4 +1,4 @@
-import express, { NextFunction } from "express";
+import express, { NextFunction, Request, Response } from "express";
 import mongoose from "mongoose";
 const app = express();
 
@@ -11,7 +11,15 @@ const connection: string = process.env.MONGO_CONNECTION!;
 
 //routes
 app.use(feedRoutes);
+
 //error middleware
+app.use((err:errorType,req:Request,res:Response,next:NextFunction)=>{
+  const errStatus: number = err.status || 500;
+  const errMessage: string = err.message;
+  res.status(500).json({
+    error: errMessage,
+  })
+});
 
 //connection
 mongoose
