@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import Post, { IPost } from "../model/Post";
+import { IRequest } from "../util/types";
 
 export const getPosts = async (
   req: Request,
@@ -57,27 +58,37 @@ export const postCreatePost = async (
 };
 
 export const postAddToFavourites = async (
-  req: Request,
+  req: IRequest,
   res: Response,
   next: NextFunction
 ) => {
-  const post = req.body.post as IPost;
-  const postObj = {...post};
-  const postFound = await Post.findById(postObj._id);
-  if(postFound){
-    //IMPLEMENT
+  try {
+    const post = req.body.post as IPost;
+    const postObj = { ...post };
+    const postFound = await Post.findById(postObj._id);
+    const result = await req.user.addToFav(postFound);
+    if (result) {
+      res.status(200).json({ message: "Added Successfully" });
+    }
+  } catch (error) {
+    next(error);
   }
 };
 
 export const postRemoveFromFavourites = async (
-  req: Request,
+  req: IRequest,
   res: Response,
   next: NextFunction
 ) => {
-  const postId = req.body.post as IPost;
-  const post = await Post.findById(postId._id);
-  if(post){
-    //
+  try {
+    const postId = req.body.post as IPost;
+    const post = await Post.findById(postId._id);
+    const result = await req.user.removeFromFav(post);
+    if (result) {
+      res.status(200).json({ message: "Removed Successfully" });
+    }
+  } catch (error) {
+    next(error);
   }
   //TODO:
 };

@@ -6,6 +6,7 @@ const app = express();
 
 //internal dependency
 import feedRoutes from "./routes/feeds";
+import { IError } from "./util/types";
 
 //env variables
 const port: string = process.env.PORT!;
@@ -20,7 +21,7 @@ app.use(express.json());
 app.use(feedRoutes);
 
 //error middleware
-app.use((err: errorType, req: Request, res: Response, next: NextFunction) => {
+app.use((err: IError, req: Request, res: Response, next: NextFunction) => {
   console.log("Error occured!", err);
   const errStatus: number = err.status || 500;
   const errMessage: string = err.message;
