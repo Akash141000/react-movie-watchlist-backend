@@ -1,8 +1,19 @@
 import { NextFunction, Request, Response } from "express";
-import Post from "../model/Post";
+import Post, { IPost } from "../model/Post";
 
-export const getPosts = (req: Request, res: Response, next: NextFunction) => {
-  console.log("getPosts");
+export const getPosts = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const posts = await Post.find();
+    if (posts) {
+      res.status(200).json(posts);
+    }
+  } catch (error) {
+    next(error);
+  }
 };
 
 export const getFavourites = async (
@@ -10,35 +21,63 @@ export const getFavourites = async (
   res: Response,
   next: NextFunction
 ) => {
-    try{
+  try {
     const allPosts = await Post.find();
     res.status(200).json(allPosts);
-    }catch(error){
-        console.log(error);
-        next(error);
+  } catch (error) {
+    console.log(error);
+    next(error);
+  }
+};
+
+export const postCreatePost = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const title = req.body.title as string;
+    const description = req.body.description as string;
+    const image = req.body.imageUrl as string;
+    const post = new Post({
+      title: title,
+      description: description,
+      image: image,
+    });
+
+    const saved = await post.save();
+    if (saved) {
+      res.status(201).json({
+        message: "Post created successfully",
+      });
     }
+  } catch (error) {
+    next(error);
+  }
 };
 
-export const postAddPost = (
+export const postAddToFavourites = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
-    console.log('logging..');
+  const post = req.body.post as IPost;
+  const postObj = {...post};
+  const postFound = await Post.findById(postObj._id);
+  if(postFound){
+    //IMPLEMENT
+  }
 };
 
-export const postAddToFavourites = (
+export const postRemoveFromFavourites = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
-    console.log('logging..');
-};
-
-export const postRemoveFromFavourites = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-    console.log('logging..');
+  const postId = req.body.post as IPost;
+  const post = await Post.findById(postId._id);
+  if(post){
+    //
+  }
+  //TODO:
 };

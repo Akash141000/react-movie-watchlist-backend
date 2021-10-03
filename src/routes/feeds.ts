@@ -5,16 +5,16 @@ const Router = express.Router();
 import {
   getPosts,
   getFavourites,
-  postAddPost,
   postAddToFavourites,
   postRemoveFromFavourites,
+  postCreatePost,
 } from "../controller/feeds";
 
 Router.get("/posts", getPosts);
 
 Router.get("/favourites", getFavourites);
 
-Router.post("/addPost", postAddPost);
+Router.post("/addPost", postCreatePost);
 
 Router.post("/addToFavourites", postAddToFavourites);
 

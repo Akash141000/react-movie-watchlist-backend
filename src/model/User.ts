@@ -1,14 +1,19 @@
-import mongoose from "mongoose";
-import Post from "./Post";
+import { Schema, model, Types, Document } from "mongoose";
+import { IPost } from "./Post";
 
-interface User {
+interface IUser {
   email: string;
   username: string;
   password: string;
-  favourites: { posts: [Post] };
+  favourites: { posts: any[] };
 }
 
-const userSchema = new mongoose.Schema<User>({
+export interface IUserDocument extends IUser, Document {
+  addToFav: (post: IPost) => Promise<void>;
+  removeFromFav: (post: IPost) => Promise<void>;
+}
+
+const userSchema = new Schema<IUserDocument>({
   email: {
     type: String,
     required: true,
@@ -24,7 +29,7 @@ const userSchema = new mongoose.Schema<User>({
   favourites: {
     posts: [
       {
-        type: mongoose.Types.ObjectId,
+        type: Types.ObjectId,
         ref: "Post",
         required: true,
       },
@@ -32,7 +37,31 @@ const userSchema = new mongoose.Schema<User>({
   },
 });
 
+userSchema.methods.addToFav = function (post: IPost) {
+  let updatedPosts: any[] = [];
+  updatedPosts = [...this.favourites.posts];
+  const postIndex = updatedPosts.findIndex((fav) => {
+    return fav.toString() === post._id.toString();
+  });
 
-const user = mongoose.model<User>("User",userSchema);
+  if (postIndex >= 0) {
+    return this.save();
+  }
+  updatedPosts.push();
+  this.favourites.posts = updatedPosts;
+  return this.save();
+};
 
-export default User;
+userSchema.methods.removeFromFav = function (post: IPost) {
+  let updatedPosts = [];
+  updatedPosts = [...this.favourites.posts];
+  updatedPosts = updatedPosts.filter((fav) => {
+    return fav.toString() !== post._id.toString();
+  });
+  this.favourites.posts = updatedPosts;
+  return this.save();
+};
+
+const user = model<IUserDocument>("User", userSchema);
+
+export default user;
