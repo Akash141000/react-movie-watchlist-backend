@@ -5,6 +5,7 @@ import { exit } from "process";
 const app = express();
 
 //internal dependency
+import authRoutes from "./routes/authentication";
 import feedRoutes from "./routes/feeds";
 import { IError } from "./util/types";
 
@@ -18,6 +19,7 @@ app.use(express.json());
 
 
 //routes
+app.use(authRoutes);
 app.use(feedRoutes);
 
 //error middleware
