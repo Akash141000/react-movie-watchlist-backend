@@ -2,7 +2,14 @@ import express, { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import User from "../model/User";
-import { IError } from "../util/types";
+import { IError, IRequest } from "../util/types";
+
+interface IAuthRequestBody {
+  username: string;
+  password: string;
+  email?: string;
+  confirmPassword?: string;
+}
 
 export const postLogin = async (
   req: Request,
@@ -10,8 +17,8 @@ export const postLogin = async (
   next: NextFunction
 ) => {
   try {
-    const username = req.body.username;
-    const password = req.body.password;
+    const username = (req.body as IAuthRequestBody).username;
+    const password = (req.body as IAuthRequestBody).password;
 
     const user = await User.findOne({ username: username });
     if (user) {
@@ -24,12 +31,10 @@ export const postLogin = async (
 
       const tokenGenerated = jwt.sign(
         { email: user.email, userId: user._id.toString() },
-        "userAuthenticationToken",
+        process.env.JSON_TOKEN_SECRET!,
         { expiresIn: "1hr" }
       );
-      res
-        .status(200)
-        .json({ token: tokenGenerated, userId: user._id.toString() });
+      res.status(200).json({ token: tokenGenerated });
     }
   } catch (error) {
     next(error);
@@ -42,10 +47,10 @@ export const postSignup = async (
   next: NextFunction
 ) => {
   try {
-    const email = req.body.email;
-    const username = req.body.username;
-    const password = req.body.password;
-    const confirmPassword = req.body.confirmPassword;
+    const email = (req.body as IAuthRequestBody).email!;
+    const username = (req.body as IAuthRequestBody).username;
+    const password = (req.body as IAuthRequestBody).password;
+    const confirmPassword = (req.body as IAuthRequestBody).confirmPassword!;
 
     if (password !== confirmPassword) {
       return res

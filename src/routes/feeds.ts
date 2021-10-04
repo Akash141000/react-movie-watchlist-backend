@@ -1,7 +1,8 @@
-import express from "express";
+import express, { IRouterMatcher } from "express";
 const Router = express.Router();
 
 //internal dependency
+import isAuth from "../middleware/jwtauth";
 import {
   getPosts,
   getFavourites,
@@ -10,14 +11,14 @@ import {
   postCreatePost,
 } from "../controller/feeds";
 
-Router.get("/posts", getPosts);
+Router.get("/posts", isAuth, getPosts);
 
-Router.get("/favourites", getFavourites);
+Router.get("/favourites", isAuth, getFavourites);
 
-Router.post("/addPost", postCreatePost);
+Router.post("/addPost", isAuth, postCreatePost);
 
-Router.post("/addToFavourites", postAddToFavourites);
+Router.post("/addToFavourites", isAuth, postAddToFavourites);
 
-Router.post("/removeFromFavourites", postRemoveFromFavourites);
+Router.post("/removeFromFavourites", isAuth, postRemoveFromFavourites);
 
 export default Router;

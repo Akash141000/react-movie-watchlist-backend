@@ -26,7 +26,6 @@ export const getFavourites = async (
     const allPosts = await Post.find();
     res.status(200).json(allPosts);
   } catch (error) {
-    console.log(error);
     next(error);
   }
 };
@@ -90,5 +89,4 @@ export const postRemoveFromFavourites = async (
   } catch (error) {
     next(error);
   }
-  //TODO:
 };

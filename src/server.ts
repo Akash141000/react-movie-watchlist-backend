@@ -8,15 +8,15 @@ const app = express();
 import authRoutes from "./routes/authentication";
 import feedRoutes from "./routes/feeds";
 import { IError } from "./util/types";
+import isAuth from "./middleware/jwtauth";
 
 //env variables
 const port: string = process.env.PORT!;
 const connection: string = process.env.MONGO_CONNECTION!;
 
 //
-app.use(express.urlencoded());
+app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
-
 
 //routes
 app.use(authRoutes);
