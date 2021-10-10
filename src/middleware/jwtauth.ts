@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import User from "../model/User";
 import { IError, IRequest } from "../util/types";
 
-const jsonToken = async (req: IRequest, res: Response, next: NextFunction) => {
+export const isAuth = async (req: IRequest, res: Response, next: NextFunction) => {
   try {
     let token: string;
     if (req.get("Authorization")) {
@@ -22,10 +22,13 @@ const jsonToken = async (req: IRequest, res: Response, next: NextFunction) => {
       throw err;
     }
     req.user = await User.findById(decodedToken.userId);
+    const path = req.route.path;
+    if(path === "/auth"){
+      res.status(200).json({auth:true}); 
+    }
     next();
   } catch (error) {
     next(error);
   }
 };
 
-export default jsonToken;

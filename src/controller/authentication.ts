@@ -19,8 +19,15 @@ export const postLogin = async (
   try {
     const username = (req.body as IAuthRequestBody).username;
     const password = (req.body as IAuthRequestBody).password;
-
+    if (!username || !password) {
+      throw new Error("No credentials Found");
+    }
     const user = await User.findOne({ username: username });
+    if(!user){
+      const error:IError =  new Error("Bad credentials");
+      error.status = 400;
+      return next(error);
+    }
     if (user) {
       const isValid = await bcrypt.compare(password, user.password);
       if (!isValid) {
@@ -34,7 +41,7 @@ export const postLogin = async (
         process.env.JSON_TOKEN_SECRET!,
         { expiresIn: "1hr" }
       );
-      res.status(200).json({ token: tokenGenerated });
+      res.status(200).json({ token: tokenGenerated, user: user._id });
     }
   } catch (error) {
     next(error);

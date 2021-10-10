@@ -14,6 +14,14 @@ import isAuth from "./middleware/jwtauth";
 const port: string = process.env.PORT!;
 const connection: string = process.env.MONGO_CONNECTION!;
 
+//CQRS
+app.use((req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization");
+  next();
+});
+
 //
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
@@ -27,7 +35,7 @@ app.use((err: IError, req: Request, res: Response, next: NextFunction) => {
   console.log("Error occured!", err);
   const errStatus: number = err.status || 500;
   const errMessage: string = err.message;
-  res.status(500).json({
+  res.status(errStatus).json({
     error: errMessage,
   });
 });

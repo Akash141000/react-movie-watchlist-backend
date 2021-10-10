@@ -1,8 +1,8 @@
-import express, { IRouterMatcher } from "express";
+import express, { IRouterMatcher,RequestHandler } from "express";
 const Router = express.Router();
 
 //internal dependency
-import isAuth from "../middleware/jwtauth";
+import {isAuth} from "../middleware/jwtauth";
 import {
   getPosts,
   getFavourites,
@@ -11,7 +11,7 @@ import {
   postCreatePost,
 } from "../controller/feeds";
 
-Router.get("/posts", isAuth, getPosts);
+Router.get("/posts",  isAuth, getPosts);
 
 Router.get("/favourites", isAuth, getFavourites);
 

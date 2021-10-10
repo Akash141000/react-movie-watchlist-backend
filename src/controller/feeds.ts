@@ -1,30 +1,47 @@
 import { NextFunction, Request, Response } from "express";
 import Post, { IPost } from "../model/Post";
+import User, { IUser, IUserDocument } from "../model/User";
 import { IRequest } from "../util/types";
 
 export const getPosts = async (
-  req: Request,
+  req: IRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const posts = await Post.find();
-    if (posts) {
-      res.status(200).json(posts);
+    const allposts = await Post.find().lean();
+    const user: IUserDocument | null = await User.findById(req.user);
+    let fav: any[] = [];
+    let transformedPosts = [];
+    if (user) {
+      fav = await user.favourites.posts;
+      allposts.forEach((post) => {
+        let isFav = false;
+        fav.forEach((favId) => {
+          if (post._id.toString() === favId.toString()) {
+            isFav = true;
+          }
+        });
+        transformedPosts.push({ ...post, isFav: isFav });
+      });
     }
+
+    res.status(200).json({ posts: transformedPosts});
   } catch (error) {
     next(error);
   }
 };
 
 export const getFavourites = async (
-  req: Request,
+  req: IRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const allPosts = await Post.find();
-    res.status(200).json(allPosts);
+    const  user:IUserDocument = await (req.user as IUserDocument).populate("favourites.posts");
+    const allFav = await user.favourites.posts;
+
+    res.status(200).json(allFav);
   } catch (error) {
     next(error);
   }
@@ -64,11 +81,10 @@ export const postAddToFavourites = async (
   try {
     const post = req.body.post as IPost;
     const postObj = { ...post };
-    const postFound = await Post.findById(postObj._id);
-    const result = await req.user.addToFav(postFound);
-    if (result) {
+    const postFound: IPost | null = await Post.findById(postObj._id);
+    req.user.addToFav(postFound).then((result: any) => {
       res.status(200).json({ message: "Added Successfully" });
-    }
+    });
   } catch (error) {
     next(error);
   }

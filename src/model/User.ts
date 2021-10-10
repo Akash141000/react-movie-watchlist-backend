@@ -1,7 +1,7 @@
 import { Schema, model, Types, Document } from "mongoose";
 import { IPost } from "./Post";
 
-interface IUser {
+export interface IUser {
   email: string;
   username: string;
   password: string;
@@ -43,11 +43,11 @@ userSchema.methods.addToFav = function (post: IPost) {
   const postIndex = updatedPosts.findIndex((fav) => {
     return fav.toString() === post._id.toString();
   });
-
   if (postIndex >= 0) {
     return this.save();
   }
-  updatedPosts.push();
+
+  updatedPosts.push(post);
   this.favourites.posts = updatedPosts;
   return this.save();
 };
