@@ -2,7 +2,8 @@ import express, { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import User from "../model/User";
-import { IError, IRequest } from "../util/types";
+import { IError } from "../util/types";
+import { IRequest } from "express-serve-static-core";
 
 interface IAuthRequestBody {
   username: string;
@@ -17,32 +18,41 @@ export const postLogin = async (
   next: NextFunction
 ) => {
   try {
-    const username = (req.body as IAuthRequestBody).username;
-    const password = (req.body as IAuthRequestBody).password;
+    const body = req.body as IAuthRequestBody;
+    if (!(body.username && body.password)) {
+      const err: IError = new Error("Invalid credentials!");
+      err.status = 400;
+      return next(err);
+    }
+    const username = body.username;
+    const password = body.password;
     if (!username || !password) {
       throw new Error("No credentials Found");
     }
     const user = await User.findOne({ username: username });
-    if(!user){
-      const error:IError =  new Error("Bad credentials");
+    if (!user) {
+      const error: IError = new Error("Bad credentials");
       error.status = 400;
       return next(error);
     }
-    if (user) {
-      const isValid = await bcrypt.compare(password, user.password);
-      if (!isValid) {
-        const err: IError = new Error("Invalid credentials!");
-        err.status = 401;
-        return next(err);
-      }
-
-      const tokenGenerated = jwt.sign(
-        { email: user.email, userId: user._id.toString() },
-        process.env.JSON_TOKEN_SECRET!,
-        { expiresIn: "1hr" }
-      );
-      res.status(200).json({ token: tokenGenerated, user: user._id });
+    const isValid = await bcrypt.compare(password, user.password);
+    if (!isValid) {
+      const err: IError = new Error("Invalid credentials!");
+      err.status = 401;
+      return next(err);
     }
+
+    const tokenGenerated = jwt.sign(
+      { email: user.email, userId: user._id.toString() },
+      process.env.JSON_TOKEN_SECRET!,
+      { expiresIn: "1hr" }
+    );
+    if (!tokenGenerated) {
+      const err: IError = new Error("Error while generating token1!");
+      err.status = 500;
+      return next(err);
+    }
+    res.status(200).json({ token: tokenGenerated, user: user._id });
   } catch (error) {
     next(error);
   }
@@ -54,10 +64,18 @@ export const postSignup = async (
   next: NextFunction
 ) => {
   try {
-    const email = (req.body as IAuthRequestBody).email!;
-    const username = (req.body as IAuthRequestBody).username;
-    const password = (req.body as IAuthRequestBody).password;
-    const confirmPassword = (req.body as IAuthRequestBody).confirmPassword!;
+    const body = req.body as IAuthRequestBody;
+    if (
+      !(body.email && body.username && body.password && body.confirmPassword)
+    ) {
+      const err: IError = new Error("Invalid credentials!");
+      err.status = 400;
+      return next(err);
+    }
+    const email = body.email;
+    const username = body.username;
+    const password = body.password;
+    const confirmPassword = body.confirmPassword!;
 
     if (password !== confirmPassword) {
       return res

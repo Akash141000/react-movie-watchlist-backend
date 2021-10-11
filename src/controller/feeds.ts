@@ -1,7 +1,9 @@
 import { NextFunction, Request, Response } from "express";
 import Post, { IPost } from "../model/Post";
 import User, { IUser, IUserDocument } from "../model/User";
-import { IRequest } from "../util/types";
+import { IRequest } from "express-serve-static-core";
+import { Types } from "mongoose";
+import { IError } from "../util/types";
 
 export const getPosts = async (
   req: IRequest,
@@ -11,22 +13,24 @@ export const getPosts = async (
   try {
     const allposts = await Post.find().lean();
     const user: IUserDocument | null = await User.findById(req.user);
-    let fav: any[] = [];
-    let transformedPosts = [];
-    if (user) {
-      fav = await user.favourites.posts;
-      allposts.forEach((post) => {
-        let isFav = false;
-        fav.forEach((favId) => {
-          if (post._id.toString() === favId.toString()) {
-            isFav = true;
-          }
-        });
-        transformedPosts.push({ ...post, isFav: isFav });
-      });
+    if (!user) {
+      const err: IError = new Error("Something went wrong!");
+      err.status = 500;
+      return next(err);
     }
+    let transformedPosts: any[] = [];
+    const Favourties: Types.ObjectId[] = await user.favourites.posts;
+    allposts.forEach((post) => {
+      let isFav = false;
+      Favourties.forEach((favId) => {
+        if (post._id.toString() === favId.toString()) {
+          isFav = true;
+        }
+      });
+      transformedPosts.push({ ...post, isFav: isFav });
+    });
 
-    res.status(200).json({ posts: transformedPosts});
+    res.status(200).json({ posts: transformedPosts });
   } catch (error) {
     next(error);
   }
@@ -38,8 +42,10 @@ export const getFavourites = async (
   next: NextFunction
 ) => {
   try {
-    const  user:IUserDocument = await (req.user as IUserDocument).populate("favourites.posts");
-    const allFav = await user.favourites.posts;
+    const user: IUserDocument = await (req.user as IUserDocument).populate(
+      "favourites.posts"
+    );
+    const allFav: IPost[] = await user.favourites.posts;
 
     res.status(200).json(allFav);
   } catch (error) {
@@ -82,7 +88,13 @@ export const postAddToFavourites = async (
     const post = req.body.post as IPost;
     const postObj = { ...post };
     const postFound: IPost | null = await Post.findById(postObj._id);
-    req.user.addToFav(postFound).then((result: any) => {
+    if (!postFound) {
+      throw new Error("Something went wrong!");
+    }
+    if (!req.user) {
+      throw new Error("No user found!");
+    }
+    req.user.addToFav(postFound).then(() => {
       res.status(200).json({ message: "Added Successfully" });
     });
   } catch (error) {
@@ -98,10 +110,15 @@ export const postRemoveFromFavourites = async (
   try {
     const postId = req.body.post as IPost;
     const post = await Post.findById(postId._id);
-    const result = await req.user.removeFromFav(post);
-    if (result) {
-      res.status(200).json({ message: "Removed Successfully" });
+    if (!post) {
+      throw new Error("Something went wrong!");
     }
+    if (!req.user) {
+      throw new Error("No user found!");
+    }
+    req.user.removeFromFav(post).then(() => {
+      res.status(200).json({ message: "Removed Successfully" });
+    });
   } catch (error) {
     next(error);
   }
